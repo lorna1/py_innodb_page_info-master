@@ -71,9 +71,9 @@ class btree():
         # 73 75 70 72 65 6d 75 6d = supremum
         page_supremum = array_split(user_records, 0, 13)
         print("     ==== INF SUPRE ==== ")
-        for c in range(page_infimum):
-            b = bin(int(c, 16))[2:]
-            print(b + " ")
+        # for c in range(page_infimum):
+        #     b = bin(int(c, 16))[2:]
+        #     print(b + " ")
 
         print("     [  0-13  ]:<%s>" % page_infimum)
         # print("     [  13-13  ]:<%s>" % page_supremum)
