@@ -7,7 +7,9 @@ class btree():
         # 解析页头信息
         btree.parsePageHeader(page)
         # 解析record信息
-        btree.parseInfimumAndSupreMumRecord(page)
+        first_record_offset = btree.parseInfimumAndSupreMumRecord(page)
+        # 解析航记录
+        btree.parseUserRecord(page,first_record_offset)
         return
 
     def parsePageHeader(page):
@@ -66,15 +68,49 @@ class btree():
         user_records = array_split(
             page, FIL_PAGE_DATA + FIL_PAGE_HEADER, len(page))
 
+        # 第一条记录的位置
+        # 第一个字节中包含
+        # 预留位         1 bit
+        # 预留位         1 bit
+        # delete_flag   1 bit
+        # min_rec_flag  1 bit
+        # n_owned       4 bit
+
+        # 第二三 字节
+        # heap_no       13 bit 
+        # record_type   3 bit
+        page_no = array_split(user_records, 1, 2)
+        # page_no_binary = bin(page_no.from_bytes(b'\x11', byteorder=sys.byteorder)) 
+        for i in page_no:
+            print(bin(i))
+        # 第四五字节
+        # next_record   16 bit
+        page_next_record = mach_read_convert_int(user_records, 3, 2)
         # 69 6e 66 69 6d 75 6d 00 = infimum
         page_infimum = array_split(user_records, 0, 13)
         # 73 75 70 72 65 6d 75 6d = supremum
-        page_supremum = array_split(user_records, 0, 13)
+        page_supremum = array_split(user_records, 13, 13)
         print("     ==== INF SUPRE ==== ")
-        # for c in range(page_infimum):
-        #     b = bin(int(c, 16))[2:]
-        #     print(b + " ")
-
+        # print("     [  1-3  ]头二进制:<%s>" % page_no_binary)
+        print("     [  3-5  ]第一条记录的位置:<%s>" % page_next_record)
         print("     [  0-13  ]:<%s>" % page_infimum)
-        # print("     [  13-13  ]:<%s>" % page_supremum)
+        print("     [  13-26  ]:<%s>" % page_supremum)
+        return page_next_record
+    
+    
+    def parseUserRecord(page,first_record_offset):
+        # 页 header
+        # 这里的 8  指的是infimum的单词的长度，记录的指针指向了header和record中间，所以这边是8而不是13。
+        # 这里的 13 指的是supremum单词+header的长度。
+        # infimum(8) + supremum(13) + n = 第一条记录的相对位置
+        header_length = first_record_offset - 8 - 13
+
+        # 记录头
+        record_header = array_split(page, FIL_PAGE_DATA + FIL_PAGE_HEADER + 26, header_length)
+
+        # 下一条记录的位置
+        page_next_record = mach_read_convert_int(record_header, 3, 2)
+        print("     ==== ROW RECORD ==== ")
+        print("     [  -  ]下一条记录的偏移量位置:<%s>" % (page_next_record))
+        print("     [  0-%s  ]记录头:<%s>" % (header_length,record_header))
         return
